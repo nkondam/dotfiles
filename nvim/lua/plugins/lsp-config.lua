@@ -44,12 +44,23 @@ return {
 			})
 		end,
 	},
+	{ "mfussenegger/nvim-jdtls" },
 	{
 		"neovim/nvim-lspconfig",
 		event = { "BufReadPre", "BufNewFile" },
 		dependencies = {
 			"hrsh7th/cmp-nvim-lsp",
 			{ "antosha417/nvim-lsp-file-operations", config = true },
+			{
+				"j-hui/fidget.nvim",
+				opts = {
+					-- options
+					lsp = {
+						progress_ringbuf_size = 0, -- Configure the nvim's LSP progress ring buffer size
+						log_handler = false, -- Log `$/progress` handler invocations (for debugging)
+					},
+				},
+			},
 			{ "folke/neodev.nvim", opts = {} },
 		},
 		config = function()
