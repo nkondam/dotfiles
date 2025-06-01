@@ -1,17 +1,14 @@
 return {
 	{
-		"williamboman/mason.nvim",
+		"mason-org/mason.nvim",
 		dependencies = {
-			"williamboman/mason-lspconfig.nvim",
-			"WhoIsSethDaniel/mason-tool-installer.nvim",
+			"mason-org/mason-lspconfig.nvim",
 		},
 		config = function()
 			local mason = require("mason")
 
 			-- import mason-lspconfig
 			local mason_lspconfig = require("mason-lspconfig")
-
-			local mason_tool_installer = require("mason-tool-installer")
 
 			-- enable mason and configure icons
 			mason.setup({
@@ -27,19 +24,11 @@ return {
 			mason_lspconfig.setup({
 				-- list of servers for mason to install
 				ensure_installed = {
-					"tsserver",
+					"ts_ls",
 					"html",
 					"lua_ls",
 					"gopls",
 					"jdtls",
-				},
-			})
-
-			mason_tool_installer.setup({
-				ensure_installed = {
-					"prettier", -- prettier formatter
-					"stylua", -- lua formatter
-					"eslint_d",
 				},
 			})
 		end,
@@ -135,47 +124,45 @@ return {
 				vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
 			end
 
-			mason_lspconfig.setup_handlers({
-				-- default handler for installed servers
-				function(server_name)
-					lspconfig[server_name].setup({
-						capabilities = capabilities,
-					})
-				end,
-				["lua_ls"] = function()
-					-- configure lua server (with special settings)
-					lspconfig["lua_ls"].setup({
-						capabilities = capabilities,
-						settings = {
-							Lua = {
-								-- make the language server recognize "vim" global
-								diagnostics = {
-									globals = { "vim" },
-								},
-								completion = {
-									callSnippet = "Replace",
-								},
+			-- NEW: Setup servers individually
+			local servers_to_setup = { "ts_ls", "html", "lua_ls", "gopls" } -- Note: jdtls is handled by nvim-jdtls
+
+			for _, server_name in ipairs(servers_to_setup) do
+				local server_opts = {
+					capabilities = capabilities,
+					-- on_attach = your_on_attach_function, -- If you had a single on_attach, otherwise LspAttach autocommand is fine
+				}
+
+				if server_name == "lua_ls" then
+					server_opts.settings = {
+						Lua = {
+							diagnostics = {
+								globals = { "vim" },
+							},
+							completion = {
+								callSnippet = "Replace",
 							},
 						},
-					})
-				end,
-				["gopls"] = function()
-					-- configure lua server (with special settings)
-					lspconfig["gopls"].setup({
-						capabilities = capabilities,
-						settings = {
-							gopls = {
-								experimentalPostfixCompletions = true,
-								analyses = {
-									unusedparams = true,
-									shadow = true,
-								},
-								staticcheck = true,
+					}
+				elseif server_name == "gopls" then
+					server_opts.settings = {
+						gopls = {
+							experimentalPostfixCompletions = true,
+							analyses = {
+								unusedparams = true,
+								shadow = true,
 							},
+							staticcheck = true,
 						},
-					})
-				end,
-			})
+					}
+				end
+				lspconfig[server_name].setup(server_opts)
+			end
+
+			-- For jdtls: nvim-jdtls usually handles its own setup.
+			-- Since you have `{'mfussenegger/nvim-jdtls'}` in your plugins,
+			-- it should automatically call lspconfig.jdtls.setup internally.
+			-- No explicit lspconfig.jdtls.setup({}) call is needed here if nvim-jdtls is active.
 		end,
 	},
 }
